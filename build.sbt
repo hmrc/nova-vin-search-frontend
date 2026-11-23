@@ -14,6 +14,8 @@ lazy val microservice = Project("nova-vin-search-frontend", file("."))
     scalacOptions += "-Wconf:src=routes/.*:s",
     scalacOptions += "-Wconf:msg=unused import&src=html/.*:s",
     pipelineStages := Seq(gzip),
+    PlayKeys.playDefaultPort := 10304,
+    scalafmtOnCompile := true,
   )
   .settings(CodeCoverageSettings.settings: _*)
 
