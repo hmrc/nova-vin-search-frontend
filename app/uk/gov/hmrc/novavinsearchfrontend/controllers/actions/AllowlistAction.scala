@@ -34,7 +34,7 @@ class AllowlistAction @Inject() (appConfig: AppConfig)(using val executionContex
   override protected def filter[A](request: IdentifierRequest[A]): Future[Option[Result]] =
     val allowedIps = appConfig.ogdAgentAllowedIps.getOrElse(request.vatAgentRefNo, Set.empty)
 
-    if request.headers.get(HeaderNames.trueClientIp).exists(allowedIps.contains) then Future.successful(None)
+    if !appConfig.ipAllowlistEnabled || request.headers.get(HeaderNames.trueClientIp).exists(allowedIps.contains) then Future.successful(None)
     else
       logger.warn("OGD agent IP is not on the allowlist for their agent reference")
       Future.successful(Some(Redirect(routes.UnauthorisedController.onPageLoad)))

@@ -31,5 +31,7 @@ class AppConfig @Inject() (config: Configuration):
 
   val technicalSupportUrl: String = config.get[String]("urls.technicalSupportUrl")
 
+  val ipAllowlistEnabled: Boolean = config.get[Boolean]("bootstrap.filters.allowlist.enabled")
+
   val ogdAgentAllowedIps: Map[String, Set[String]] =
     config.get[Map[String, Seq[String]]]("ogd-agents.allowed-ips").view.mapValues(_.toSet).toMap

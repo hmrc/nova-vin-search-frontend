@@ -19,21 +19,31 @@ package uk.gov.hmrc.novavinsearchfrontend.controllers.actions
 import org.scalatest.matchers.should.Matchers
 import org.scalatest.wordspec.AnyWordSpec
 import org.scalatestplus.play.guice.GuiceOneAppPerSuite
+import play.api.{Application, Configuration}
+import play.api.inject.guice.GuiceApplicationBuilder
 import play.api.mvc.{AnyContentAsEmpty, Result, Results}
 import play.api.test.FakeRequest
 import play.api.test.Helpers.*
+import uk.gov.hmrc.novavinsearchfrontend.config.AppConfig
 import uk.gov.hmrc.novavinsearchfrontend.controllers.routes
 import uk.gov.hmrc.novavinsearchfrontend.models.requests.IdentifierRequest
 
-import scala.concurrent.Future
+import scala.concurrent.{ExecutionContext, Future}
 
 class AllowlistActionSpec extends AnyWordSpec with Matchers with GuiceOneAppPerSuite:
+
+  override def fakeApplication(): Application =
+    GuiceApplicationBuilder().configure("bootstrap.filters.allowlist.enabled" -> true).build()
 
   private val action       = app.injector.instanceOf[AllowlistAction]
   private val noPermission = routes.UnauthorisedController.onPageLoad.url
 
-  private def run(request: FakeRequest[AnyContentAsEmpty.type], vatAgentRefNo: String): Future[Result] =
-    action.invokeBlock(IdentifierRequest(request, vatAgentRefNo), _ => Future.successful(Results.Ok))
+  private val disabledAction = AllowlistAction(
+    AppConfig(Configuration("bootstrap.filters.allowlist.enabled" -> false).withFallback(app.configuration))
+  )(using ExecutionContext.global)
+
+  private def run(request: FakeRequest[AnyContentAsEmpty.type], vatAgentRefNo: String, allowlist: AllowlistAction = action): Future[Result] =
+    allowlist.invokeBlock(IdentifierRequest(request, vatAgentRefNo), _ => Future.successful(Results.Ok))
 
   private def runFrom(ip: String, vatAgentRefNo: String): Future[Result] =
     run(FakeRequest().withHeaders("True-Client-IP" -> ip), vatAgentRefNo)
@@ -68,3 +78,9 @@ class AllowlistActionSpec extends AnyWordSpec with Matchers with GuiceOneAppPerS
 
       status(result)           shouldBe SEE_OTHER
       redirectLocation(result) shouldBe Some(noPermission)
+
+    "admit an IP address on no list when the allowlist is turned off" in:
+      status(run(FakeRequest().withHeaders("True-Client-IP" -> "198.51.100.1"), "AF0851", disabledAction)) shouldBe OK
+
+    "admit a request with no True-Client-IP header when the allowlist is turned off" in:
+      status(run(FakeRequest(), "AF0851", disabledAction)) shouldBe OK

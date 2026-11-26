@@ -16,9 +16,9 @@
 
 package uk.gov.hmrc.novavinsearchfrontend.controllers.actions
 
-import uk.gov.hmrc.auth.core.AuthConnector
+import uk.gov.hmrc.auth.core.{AffinityGroup, AuthConnector, Enrolment, EnrolmentIdentifier, Enrolments}
 import uk.gov.hmrc.auth.core.authorise.Predicate
-import uk.gov.hmrc.auth.core.retrieve.Retrieval
+import uk.gov.hmrc.auth.core.retrieve.{Retrieval, ~}
 import uk.gov.hmrc.http.HeaderCarrier
 
 import scala.concurrent.{ExecutionContext, Future}
@@ -34,3 +34,10 @@ class FakeSuccessAuthConnector[T](result: T) extends AuthConnector:
 
   override def authorise[A](predicate: Predicate, retrieval: Retrieval[A])(implicit hc: HeaderCarrier, ec: ExecutionContext): Future[A] =
     Future.successful(result.asInstanceOf[A])
+
+object FakeRetrievals:
+  val dvlaAgent =
+    new ~(
+      new ~(Some("internalId"), Some(AffinityGroup.Agent)),
+      Enrolments(Set(Enrolment("HMRC-NOVRN-AGNT", List(EnrolmentIdentifier("VATAgentRefNo", "AF0851")), "Activated")))
+    )

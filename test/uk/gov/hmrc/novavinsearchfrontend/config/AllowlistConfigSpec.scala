@@ -24,15 +24,22 @@ import scala.jdk.CollectionConverters.*
 
 class AllowlistConfigSpec extends AnyWordSpec with Matchers:
 
-  private def filterIps(environmentConfig: String) =
+  private def resolved(environmentConfig: String) =
     ConfigFactory
       .parseString(environmentConfig)
       .withFallback(ConfigFactory.parseResources("application.conf"))
       .withFallback(ConfigFactory.defaultReference())
       .resolve()
+
+  private def filterIps(environmentConfig: String) =
+    resolved(environmentConfig)
       .getStringList("bootstrap.filters.allowlist.ips")
       .asScala
       .toList
+
+  "the allowlist" should:
+    "be off in the service's own config" in:
+      resolved("").getBoolean("bootstrap.filters.allowlist.enabled") shouldBe false
 
   "the allowlist filter's IP list" should:
     "hold every organisation's IP addresses" in:
