@@ -23,11 +23,11 @@ import org.scalatestplus.play.guice.GuiceOneServerPerSuite
 import play.api.Application
 import play.api.inject.bind
 import play.api.inject.guice.GuiceApplicationBuilder
-import uk.gov.hmrc.auth.core.*
-import uk.gov.hmrc.auth.core.retrieve.~
+import uk.gov.hmrc.auth.core.AuthConnector
 import uk.gov.hmrc.http.client.HttpClientV2
 import uk.gov.hmrc.http.HttpReads.Implicits.readRaw
 import uk.gov.hmrc.http.{HeaderCarrier, HttpResponse, StringContextOps}
+import uk.gov.hmrc.novavinsearchfrontend.controllers.actions.FakeRetrievals.dvlaAgent
 import uk.gov.hmrc.novavinsearchfrontend.controllers.actions.FakeSuccessAuthConnector
 
 import java.net.URL
@@ -35,15 +35,12 @@ import scala.concurrent.ExecutionContext.Implicits.global
 
 class AllowlistFilterIntegrationSpec extends AnyWordSpec with Matchers with ScalaFutures with IntegrationPatience with GuiceOneServerPerSuite:
 
-  private val dvlaAgent =
-    new ~(
-      new ~(Some("internalId"), Some(AffinityGroup.Agent)),
-      Enrolments(Set(Enrolment("HMRC-NOVRN-AGNT", List(EnrolmentIdentifier("VATAgentRefNo", "AF0851")), "Activated")))
-    )
-
   override def fakeApplication(): Application =
     GuiceApplicationBuilder()
-      .configure("ogd-agents.allowed-ips.AF0851" -> List("192.0.2.1", "198.51.100.1"))
+      .configure(
+        "bootstrap.filters.allowlist.enabled" -> true,
+        "ogd-agents.allowed-ips.AF0851"       -> List("192.0.2.1", "198.51.100.1")
+      )
       .overrides(bind[AuthConnector].toInstance(FakeSuccessAuthConnector(dvlaAgent)))
       .build()
 

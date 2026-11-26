@@ -26,20 +26,18 @@ import play.api.test.Helpers.*
 import uk.gov.hmrc.auth.core.*
 import uk.gov.hmrc.auth.core.retrieve.~
 import uk.gov.hmrc.novavinsearchfrontend.config.AppConfig
+import uk.gov.hmrc.novavinsearchfrontend.controllers.actions.FakeRetrievals.dvlaAgent
 import uk.gov.hmrc.novavinsearchfrontend.controllers.actions.{FakeFailingAuthConnector, FakeSuccessAuthConnector}
 
 class LandingPageControllerSpec extends AnyWordSpec with Matchers with OptionValues:
 
-  private val dvlaAgent =
-    new ~(
-      new ~(Some("internalId"), Some(AffinityGroup.Agent)),
-      Enrolments(Set(Enrolment("HMRC-NOVRN-AGNT", List(EnrolmentIdentifier("VATAgentRefNo", "AF0851")), "Activated")))
-    )
-
   private val individual = new ~(new ~(Some("internalId"), Some(AffinityGroup.Individual)), Enrolments(Set.empty))
 
   private def application(authConnector: AuthConnector) =
-    GuiceApplicationBuilder().overrides(bind[AuthConnector].toInstance(authConnector)).build()
+    GuiceApplicationBuilder()
+      .configure("bootstrap.filters.allowlist.enabled" -> true)
+      .overrides(bind[AuthConnector].toInstance(authConnector))
+      .build()
 
   private def requestFrom(ip: String) = FakeRequest().withHeaders("True-Client-IP" -> ip)
 
